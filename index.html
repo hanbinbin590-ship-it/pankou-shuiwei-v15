@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>盘口分析工作台 V15 · 云端版</title>
+<style>
+:root{--bg:#07101d;--panel:#0d1828;--panel2:#111f32;--line:#203149;--text:#eaf1f8;--muted:#8fa3b8;--accent:#5aa9ff;--good:#42d392;--warn:#f4bd55;--bad:#ff6b7a;--radius:16px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;padding-bottom:76px}
+.top{position:sticky;top:0;z-index:20;background:rgba(7,16,29,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:12px max(14px,env(safe-area-inset-left)) 10px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand h1{font-size:18px;margin:0}.brand small{color:var(--muted)}.status{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:999px}
+.wrap{max-width:1180px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:linear-gradient(180deg,var(--panel),#0a1524);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.16)}.card h2,.card h3{margin:0 0 10px}.muted{color:var(--muted)}.kpi{font-size:24px;font-weight:750}.kpiLabel{font-size:12px;color:var(--muted);margin-bottom:5px}.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:12px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.btn{border:1px solid var(--line);background:#122239;color:var(--text);border-radius:11px;padding:10px 12px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#03101d;font-weight:700}.btn.ghost{background:transparent}.btn.danger{border-color:#5a2530;color:#ff9aa5}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field{margin-bottom:10px}input,select,textarea{width:100%;border:1px solid var(--line);background:#091524;color:var(--text);border-radius:10px;padding:10px 11px;outline:none}textarea{min-height:90px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:600;background:#0a1524;position:sticky;top:0}.empty{padding:24px;text-align:center;color:var(--muted)}
+.nav{position:fixed;z-index:30;bottom:0;left:0;right:0;padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom));background:rgba(6,13,24,.96);border-top:1px solid var(--line);display:flex;gap:4px;overflow:auto}.nav button{flex:1;min-width:72px;background:transparent;color:var(--muted);border:0;padding:7px 5px;font-size:11px}.nav button.active{color:var(--text);background:#13243a;border-radius:10px}.nav b{display:block;font-size:16px;margin-bottom:2px}
+.hero{padding:16px;background:linear-gradient(135deg,#112844,#0b1829);border:1px solid #284564;border-radius:18px;margin-bottom:12px}.hero .teams{font-size:21px;font-weight:800}.hero .meta{color:var(--muted);font-size:12px;margin-top:6px}
+canvas{width:100%;height:230px;background:#081321;border:1px solid var(--line);border-radius:12px}
+.result{padding:12px;border-radius:12px;background:#091524;border:1px solid var(--line);margin-top:10px}.big{font-size:28px;font-weight:800}
+@media(max-width:720px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}.wrap{padding:10px}.card{padding:12px}.kpi{font-size:20px}.hero .teams{font-size:19px}.desktopOnly{display:none}}
+@media(max-width:430px){.g2,.g3,.g4{grid-template-columns:1fr}.btn{padding:9px 10px}.nav button{min-width:64px}}
+@media(min-width:900px){.app{padding-bottom:0}.nav{position:sticky;top:59px;bottom:auto;max-width:1180px;margin:auto;border:0;background:transparent;padding:8px 14px}.nav button{background:#0d1828;border:1px solid var(--line);border-radius:10px}.wrap{padding-top:6px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand"><div><h1>盘口分析工作台 V15</h1><small>云端版 · 比赛驾驶舱</small></div><div id="cloudStatus" class="status">本地模式</div></div></header>
+<main class="wrap">
+<section id="home" class="page active">
+<div class="hero"><div class="muted">当前比赛</div><div id="heroTeams" class="teams">尚未选择比赛</div><div id="heroMeta" class="meta">先在“比赛库”创建比赛并记录盘口</div></div>
+<div class="grid g4">
+<div class="card"><div class="kpiLabel">盘口事件</div><div id="kpiEvents" class="kpi">0</div></div>
+<div class="card"><div class="kpiLabel">高异常</div><div id="kpiAnomaly" class="kpi">0</div></div>
+<div class="card"><div class="kpiLabel">ROI</div><div id="kpiROI" class="kpi">0%</div></div>
+<div class="card"><div class="kpiLabel">最大回撤</div><div id="kpiDD" class="kpi">0</div></div>
+</div>
+<div class="grid g2" style="margin-top:12px">
+<div class="card"><h3>盘口矩阵</h3><div id="matrix"></div></div>
+<div class="card"><h3>异常雷达</h3><div id="radar"></div><canvas id="miniChart" width="900" height="230"></canvas></div>
+</div>
+</section>
+
+<section id="matches" class="page">
+<div class="toolbar"><button class="btn primary" onclick="addMatch()">＋ 新建比赛</button><button class="btn" onclick="exportJSON()">导出备份</button><button class="btn" onclick="document.getElementById('fileIn').click()">导入备份</button><input id="fileIn" type="file" accept=".json" hidden onchange="importJSON(event)"></div>
+<div id="matchList" class="grid"></div>
+</section>
+
+<section id="events" class="page">
+<div class="card"><h3>记录盘口事件</h3>
+<div class="grid g3">
+<div class="field"><label>比赛</label><select id="eMatch"></select></div>
+<div class="field"><label>公司</label><input id="eBook" placeholder="例如：公司A"></div>
+<div class="field"><label>市场</label><select id="eMarket"><option>亚盘</option><option>大小球</option><option>欧赔</option></select></div>
+<div class="field"><label>盘口</label><input id="eLine" placeholder="例如 -0.5 / 2.5 / 1"></div>
+<div class="field"><label>A水/主胜</label><input id="eA" type="number" step="0.01" placeholder="0.92"></div>
+<div class="field"><label>B水/客胜</label><input id="eB" type="number" step="0.01" placeholder="0.94"></div>
+</div>
+<div class="field"><label>标签</label><input id="eTags" placeholder="开盘,降水,临场"></div>
+<button class="btn primary" onclick="recordEvent()">保存盘口事件</button>
+</div>
+<div class="card" style="margin-top:12px"><h3>事件记录</h3><div id="eventTable"></div></div>
+</section>
+
+<section id="timeline" class="page">
+<div class="card"><h3>盘口时间轴</h3><div class="toolbar"><select id="tMatch"></select><select id="tBook"><option value="">全部公司</option></select><select id="tMarket"><option value="">全部市场</option><option>亚盘</option><option>大小球</option><option>欧赔</option></select></div><canvas id="timelineChart" width="1200" height="330"></canvas><div id="timelineInfo" class="muted" style="margin-top:8px"></div></div>
+</section>
+
+<section id="calc" class="page">
+<div class="grid g2">
+<div class="card"><h3>亚盘结算计算器</h3>
+<div class="grid g2">
+<div class="field"><label>盘口</label><input id="ahLine" value="-0.25"></div>
+<div class="field"><label>水位</label><input id="ahOdds" value="0.92"></div>
+<div class="field"><label>主队进球</label><input id="ahHome" type="number" value="1"></div>
+<div class="field"><label>客队进球</label><input id="ahAway" type="number" value="0"></div>
+</div><button class="btn primary" onclick="calcAH()">计算</button><div id="ahResult" class="result"></div></div>
+<div class="card"><h3>大小球结算计算器</h3>
+<div class="grid g2">
+<div class="field"><label>盘口</label><input id="ouLine" value="2.25"></div>
+<div class="field"><label>水位</label><input id="ouOdds" value="0.92"></div>
+<div class="field"><label>总进球</label><input id="ouGoals" type="number" value="2"></div>
+</div><button class="btn primary" onclick="calcOU()">计算</button><div id="ouResult" class="result"></div></div>
+</div>
+</section>
+
+<section id="kelly" class="page">
+<div class="card"><h3>EV + 凯利</h3>
+<div class="grid g4">
+<div class="field"><label>十进制赔率</label><input id="kOdds" type="number" step="0.01" value="1.92"></div>
+<div class="field"><label>主观概率</label><input id="kProb" type="number" step="0.001" value="0.55"></div>
+<div class="field"><label>本金</label><input id="kBank" type="number" value="10000"></div>
+<div class="field"><label>凯利系数</label><input id="kFrac" type="number" step="0.05" value="0.5"></div>
+</div><button class="btn primary" onclick="calcKelly()">计算</button><div id="kellyResult" class="result"></div><div id="sens" class="tableWrap" style="margin-top:10px"></div>
+</div>
+</section>
+
+<section id="performance" class="page">
+<div class="card"><h3>长期统计</h3><div class="toolbar"><button class="btn primary" onclick="addBet()">＋ 记录一笔结果</button></div><div id="perfKpi" class="grid g4"></div><canvas id="pnlChart" width="1200" height="300" style="margin-top:12px"></canvas><div id="betTable" style="margin-top:12px"></div></div>
+</section>
+
+<section id="review" class="page">
+<div class="card"><h3>赛后复盘</h3><div class="grid g2"><div class="field"><label>比赛</label><select id="rMatch"></select></div><div class="field"><label>比分</label><input id="rScore" placeholder="1-0"></div><div class="field"><label>复盘分类</label><select id="rCat"><option>盘口判断</option><option>数据质量</option><option>执行纪律</option><option>模型偏差</option><option>其他</option></select></div><div class="field"><label>备注</label><textarea id="rNote" placeholder="记录开盘、即时、临场与结果的差异"></textarea></div></div><button class="btn primary" onclick="saveReview()">保存复盘</button></div><div class="card" style="margin-top:12px"><h3>复盘记录</h3><div id="reviewList"></div></div>
+</section>
+
+<section id="cloud" class="page">
+<div class="card"><h3>云端正式版</h3><p class="muted">V15 支持账号登录后按用户隔离云端数据。第一次使用先注册账号；之后可在 iPhone、电脑等设备同步。</p>
+<div class="field"><label>API 地址</label><input id="apiUrl" placeholder="https://你的云端网址"></div>
+<div class="grid g2"><div class="field"><label>用户名</label><input id="cloudUser" autocomplete="username" placeholder="例如：myname"></div><div class="field"><label>密码</label><input id="cloudPass" type="password" autocomplete="current-password" placeholder="至少 8 位"></div></div>
+<div class="grid g3"><button class="btn" onclick="registerCloud()">注册</button><button class="btn primary" onclick="loginCloud()">登录</button><button class="btn" onclick="logoutCloud()">退出</button></div>
+<div class="grid g2" style="margin-top:8px"><button class="btn primary" onclick="pushCloud()">上传到云端</button><button class="btn" onclick="pullCloud()">从云端拉取</button></div>
+<div id="cloudMsg" class="result">尚未连接云端</div></div>
+<div class="card" style="margin-top:12px"><h3>本地安全备份</h3><p class="muted">云端上线后仍建议定期导出 JSON。V15 的账号数据按用户隔离；生产环境可继续升级 PostgreSQL、自动备份和更强鉴权。</p><button class="btn danger" onclick="wipe()">清空本机数据</button></div>
+</section>
+</main>
+<nav class="nav">
+<button class="active" onclick="go('home',this)"><b>⌂</b>总览</button>
+<button onclick="go('matches',this)"><b>▦</b>比赛库</button>
+<button onclick="go('events',this)"><b>＋</b>盘口</button>
+<button onclick="go('timeline',this)"><b>↗</b>时间轴</button>
+<button onclick="go('calc',this)"><b>∑</b>计算</button>
+<button onclick="go('kelly',this)"><b>K</b>凯利</button>
+<button onclick="go('performance',this)"><b>¥</b>统计</button>
+<button onclick="go('review',this)"><b>✓</b>复盘</button>
+<button onclick="go('cloud',this)"><b>☁</b>云端</button>
+</nav>
+</div>
+<script>
+const KEY='odds_v15_cloud_db';
+const $=id=>document.getElementById(id);
+const now=()=>new Date().toISOString();
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{version:15,matches:[],events:[],bets:[],reviews:[],settings:{api:''},selectedMatch:null};
+let cloudToken=localStorage.getItem('odds_v15_token')||'';
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function go(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(id==='timeline')drawTimeline();if(id==='performance')drawPNL()}
+function addMatch(){const league=prompt('联赛','');if(league===null)return;const home=prompt('主队','主队');if(home===null)return;const away=prompt('客队','客队');if(away===null)return;const start=prompt('开赛时间','');const m={id:crypto.randomUUID(),league,home,away,start,createdAt:now()};db.matches.unshift(m);db.selectedMatch=m.id;save()}
+function selectMatch(id){db.selectedMatch=id;save()}
+function recordEvent(){const e={id:crypto.randomUUID(),matchId:$('eMatch').value,book:$('eBook').value.trim()||'未命名公司',market:$('eMarket').value,line:$('eLine').value.trim(),a:parseFloat($('eA').value),b:parseFloat($('eB').value),tags:$('eTags').value.trim(),ts:Date.now()};if(!e.matchId||!Number.isFinite(e.a)||!Number.isFinite(e.b)){alert('请填写比赛和 A/B 水位');return}const prev=db.events.filter(x=>x.matchId===e.matchId&&x.book===e.book&&x.market===e.market).sort((a,b)=>a.ts-b.ts).at(-1);e.anomaly=prev?anomaly(prev,e):0;db.events.unshift(e);db.selectedMatch=e.matchId;save();alert('盘口事件已保存')}
+function anomaly(p,e){let s=0;const lineNum=x=>parseFloat(String(x).replace(/[^0-9+-.]/g,''));const dl=Math.abs(lineNum(e.line)-lineNum(p.line));const da=Math.abs(e.a-p.a),dbb=Math.abs(e.b-p.b);if(dl>=.5)s+=35;else if(dl>=.25)s+=18;if(da>=.12)s+=30;else if(da>=.08)s+=18;if(dbb>=.12)s+=15;return Math.min(100,s)}
+function options(selectId, includeAll=false){const el=$(selectId);if(!el)return;const old=el.value;let h=includeAll?'<option value="">全部</option>':'';h+=db.matches.map(m=>`<option value="${m.id}">${esc(m.league)} · ${esc(m.home)} vs ${esc(m.away)}</option>`).join('');el.innerHTML=h;if([...el.options].some(o=>o.value===old))el.value=old;else if(db.selectedMatch)el.value=db.selectedMatch}
+function renderMatches(){$('matchList').innerHTML=db.matches.length?db.matches.map(m=>`<div class="card"><div class="toolbar"><span class="pill">${esc(m.league||'未填联赛')}</span><span class="pill">${db.events.filter(e=>e.matchId===m.id).length} 条盘口</span></div><h3>${esc(m.home)} <span class="muted">vs</span> ${esc(m.away)}</h3><div class="muted">${esc(m.start||'未填写开赛时间')}</div><div class="toolbar" style="margin-top:10px"><button class="btn primary" onclick="selectMatch('${m.id}')">设为当前</button><button class="btn" onclick="removeMatch('${m.id}')">删除</button></div></div>`).join(''):'<div class="card empty">还没有比赛。点击“新建比赛”。</div>'}
+function removeMatch(id){if(!confirm('删除比赛及其盘口、复盘记录？'))return;db.matches=db.matches.filter(m=>m.id!==id);db.events=db.events.filter(e=>e.matchId!==id);db.reviews=db.reviews.filter(r=>r.matchId!==id);if(db.selectedMatch===id)db.selectedMatch=db.matches[0]?.id||null;save()}
+function renderEvents(){const es=[...db.events].sort((a,b)=>b.ts-a.ts);$('eventTable').innerHTML=es.length?`<div class="tableWrap"><table><thead><tr><th>时间</th><th>公司</th><th>市场</th><th>盘口</th><th>A</th><th>B</th><th>异常</th><th>标签</th></tr></thead><tbody>${es.map(e=>`<tr><td>${new Date(e.ts).toLocaleString()}</td><td>${esc(e.book)}</td><td>${esc(e.market)}</td><td>${esc(e.line)}</td><td>${e.a.toFixed(2)}</td><td>${e.b.toFixed(2)}</td><td class="${e.anomaly>=60?'bad':e.anomaly>=30?'warn':'good'}">${e.anomaly}</td><td>${esc(e.tags)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">暂无盘口事件</div>'}
+function renderMatrix(){const id=db.selectedMatch;const es=db.events.filter(e=>e.matchId===id).sort((a,b)=>b.ts-a.ts);if(!es.length){$('matrix').innerHTML='<div class="empty">当前比赛暂无盘口</div>';return}const groups={};es.forEach(e=>{const k=e.book+'|'+e.market;if(!groups[k])groups[k]=e});$('matrix').innerHTML=`<div class="tableWrap"><table><thead><tr><th>公司</th><th>市场</th><th>盘口</th><th>A</th><th>B</th><th>异常</th></tr></thead><tbody>${Object.values(groups).map(e=>`<tr><td>${esc(e.book)}</td><td>${esc(e.market)}</td><td>${esc(e.line)}</td><td>${e.a.toFixed(2)}</td><td>${e.b.toFixed(2)}</td><td class="${e.anomaly>=60?'bad':e.anomaly>=30?'warn':'good'}">${e.anomaly}</td></tr>`).join('')}</tbody></table></div>`}
+function renderRadar(){const es=db.events.filter(e=>e.matchId===db.selectedMatch);const avg=es.length?es.reduce((a,e)=>a+e.anomaly,0)/es.length:0;const hi=es.filter(e=>e.anomaly>=60).length;$('radar').innerHTML=`<div class="grid g2"><div><div class="kpiLabel">平均异常</div><div class="big">${avg.toFixed(0)}</div></div><div><div class="kpiLabel">高异常事件</div><div class="big ${hi?'bad':''}">${hi}</div></div></div>`}
+function calcAH(){const line=parseFloat($('ahLine').value),od=parseFloat($('ahOdds').value),hg=+$('ahHome').value,ag=+$('ahAway').value;const [l1,l2]=splitQuarter(line);const r1=settleAsian(l1,hg-ag),r2=l2===null?r1:settleAsian(l2,hg-ag);const val=(r1+r2)/2;const names=['全输','半输','走盘','半赢','全赢'];$('ahResult').innerHTML=`<div>拆盘：${l1}${l2===null?'': ' / '+l2}</div><div class="big">${names[val+2]||'—'}</div><div>赔率 ${od.toFixed(2)} · 含本金回报倍数约 ${(1+od*Math.max(0,val)).toFixed(3)}</div>`}
+function splitQuarter(x){const q=Math.round(x*4)/4;if(Math.abs(q*2-Math.round(q*2))<1e-9)return[q,null];const a=Math.floor(q*2)/2;return[a,a+.5]}
+function settleAsian(line,diff){const eps=1e-9;if(diff-line>eps)return 1;if(Math.abs(diff-line)<=eps)return 0;return -1}
+function calcOU(){const line=parseFloat($('ouLine').value),od=parseFloat($('ouOdds').value),g=+$('ouGoals').value;const [l1,l2]=splitQuarter(line);const d=g-l1;const r1=d>0?1:Math.abs(d)<1e-9?0:-1;const r2=l2===null?r1:(g-l2>0?1:Math.abs(g-l2)<1e-9?0:-1);const val=(r1+r2)/2;$('ouResult').innerHTML=`<div>拆盘：${l1}${l2===null?'':' / '+l2}</div><div class="big">${val>0?'赢':val<0?'输': '走/半赢半输'}</div><div>赔率 ${od.toFixed(2)} · 结果等级 ${val.toFixed(2)}</div>`}
+function calcKelly(){const o=+$('kOdds').value,p=+$('kProb').value,B=+$('kBank').value,f=+$('kFrac').value,b=o-1;const ev=p*o-1;const full=b>0?(p*o-1)/b:0;const use=Math.max(0,Math.min(1,full*f));const stake=B*use;$('kellyResult').innerHTML=`<div class="grid g3"><div><div class="kpiLabel">EV</div><div class="big ${ev>=0?'good':'bad'}">${(ev*100).toFixed(2)}%</div></div><div><div class="kpiLabel">Full Kelly</div><div class="big">${(full*100).toFixed(2)}%</div></div><div><div class="kpiLabel">建议仓位(按系数)</div><div class="big">${(use*100).toFixed(2)}%</div></div></div><div style="margin-top:8px">对应金额：${stake.toFixed(2)} · 盈亏平衡概率：${(1/o*100).toFixed(2)}%</div>`;let rows='';for(let x=-.05;x<=.0501;x+=.025){const pp=Math.max(0,Math.min(1,p+x));const kk=b>0?Math.max(0,(pp*o-1)/b)*f:0;rows+=`<tr><td>${(pp*100).toFixed(1)}%</td><td>${((pp*o-1)*100).toFixed(2)}%</td><td>${(kk*100).toFixed(2)}%</td><td>${(B*kk).toFixed(2)}</td></tr>`}$('sens').innerHTML=`<table><thead><tr><th>概率</th><th>EV</th><th>调整后Kelly</th><th>金额</th></tr></thead><tbody>${rows}</tbody></table>`}
+function addBet(){const match=prompt('比赛（可填主客队）','');if(match===null)return;const stake=+prompt('投入金额','100')||0;const odds=+prompt('赔率','1.90')||0;const res=prompt('结果：W/L/P','W');if(res===null)return;db.bets.push({id:crypto.randomUUID(),match,stake,odds,result:res.toUpperCase(),ts:Date.now()});save()}
+function stats(){let pnl=0,peak=0,dd=0,profit=0,stake=0,w=0;const points=[];db.bets.sort((a,b)=>a.ts-b.ts).forEach(b=>{const x=b.result==='W'?b.stake*(b.odds-1):b.result==='L'?-b.stake:0;pnl+=x;profit+=x;stake+=b.stake;w+=b.result==='W'?1:0;peak=Math.max(peak,pnl);dd=Math.max(dd,peak-pnl);points.push(pnl)});return{pnl,roi:stake?profit/stake:0,dd,w,n:db.bets.length,points}}
+function renderPerformance(){const s=stats();$('perfKpi').innerHTML=[['笔数',s.n],['命中率',s.n?(s.w/s.n*100).toFixed(1)+'%':'0%'],['ROI',(s.roi*100).toFixed(2)+'%'],['最大回撤',s.dd.toFixed(2)]].map(x=>`<div class="card"><div class="kpiLabel">${x[0]}</div><div class="kpi">${x[1]}</div></div>`).join('');const bs=[...db.bets].sort((a,b)=>b.ts-a.ts);$('betTable').innerHTML=bs.length?`<div class="tableWrap"><table><thead><tr><th>时间</th><th>比赛</th><th>投入</th><th>赔率</th><th>结果</th></tr></thead><tbody>${bs.map(b=>`<tr><td>${new Date(b.ts).toLocaleString()}</td><td>${esc(b.match)}</td><td>${b.stake}</td><td>${b.odds}</td><td class="${b.result==='W'?'good':b.result==='L'?'bad':'warn'}">${b.result}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">暂无结果记录</div>'}
+function drawCanvas(canvas,vals){const c=$(canvas);if(!c)return;const ctx=c.getContext('2d'),w=c.width=c.clientWidth*2,h=c.height=c.clientHeight*2;ctx.scale(2,2);const W=c.clientWidth,H=c.clientHeight;ctx.clearRect(0,0,W,H);ctx.strokeStyle='#203149';for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(0,H*i/5);ctx.lineTo(W,H*i/5);ctx.stroke()}if(!vals.length)return;const mn=Math.min(...vals,0),mx=Math.max(...vals,0),range=mx-mn||1;ctx.strokeStyle='#5aa9ff';ctx.lineWidth=2;ctx.beginPath();vals.forEach((v,i)=>{const x=i/(Math.max(1,vals.length-1))*W,y=H-(v-mn)/range*H;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
+function drawTimeline(){const id=$('tMatch').value||db.selectedMatch;let es=db.events.filter(e=>e.matchId===id);const book=$('tBook').value,market=$('tMarket').value;if(book)es=es.filter(e=>e.book===book);if(market)es=es.filter(e=>e.market===market);es.sort((a,b)=>a.ts-b.ts);drawCanvas('timelineChart',es.map(e=>e.a));$('timelineInfo').textContent=es.length?`共 ${es.length} 个事件 · A水从 ${es[0].a.toFixed(2)} 变为 ${es.at(-1).a.toFixed(2)}`:'暂无符合条件的数据'}
+function drawPNL(){drawCanvas('pnlChart',stats().points)}
+function renderReviews(){const rs=[...db.reviews].sort((a,b)=>b.ts-a.ts);$('reviewList').innerHTML=rs.length?rs.map(r=>`<div class="card"><b>${esc(r.score||'未填比分')}</b> · ${esc(r.cat)}<div class="muted">${esc(r.note)}</div></div>`).join(''):'<div class="empty">暂无复盘</div>'}
+function saveReview(){db.reviews.push({id:crypto.randomUUID(),matchId:$('rMatch').value,score:$('rScore').value,cat:$('rCat').value,note:$('rNote').value,ts:Date.now()});save();$('rNote').value=''}
+function renderSelects(){options('eMatch');options('tMatch');options('rMatch');const books=[...new Set(db.events.filter(e=>e.matchId===($('tMatch').value||db.selectedMatch)).map(e=>e.book))];const tb=$('tBook'),old=tb.value;tb.innerHTML='<option value="">全部公司</option>'+books.map(b=>`<option>${esc(b)}</option>`).join('');if(books.includes(old))tb.value=old;else tb.value=''}
+function renderHome(){const m=db.matches.find(x=>x.id===db.selectedMatch)||db.matches[0];if(m){db.selectedMatch=m.id;$('heroTeams').textContent=`${m.home}  VS  ${m.away}`;$('heroMeta').textContent=`${m.league||'未填联赛'} · ${m.start||'未填写时间'}`}else{$('heroTeams').textContent='尚未选择比赛';$('heroMeta').textContent='先在“比赛库”创建比赛并记录盘口'}const es=db.events.filter(e=>e.matchId===db.selectedMatch);$('kpiEvents').textContent=es.length;$('kpiAnomaly').textContent=es.filter(e=>e.anomaly>=60).length;const s=stats();$('kpiROI').textContent=(s.roi*100).toFixed(2)+'%';$('kpiDD').textContent=s.dd.toFixed(2);renderMatrix();renderRadar();drawCanvas('miniChart',es.sort((a,b)=>a.ts-b.ts).map(e=>e.anomaly))}
+function renderAll(){renderHome();renderMatches();renderEvents();renderSelects();renderPerformance();renderReviews();$('apiUrl').value=db.settings.api||'';
+$('cloudUser').value=localStorage.getItem('odds_v15_user')||'';drawTimeline();drawPNL()}
+function exportJSON(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='盘口分析工作台_V15_备份.json';a.click();URL.revokeObjectURL(a.href)}
+function importJSON(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.matches||!x.events)throw Error();db=x;save();alert('导入成功')}catch(e){alert('备份文件无效')}};r.readAsText(f)}
+async function apiFetch(path,opts={}){
+  const u=$('apiUrl').value.trim().replace(/\/$/,'');
+  if(!u) throw Error('请先填写 API 地址');
+  opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  if(cloudToken) opts.headers.Authorization='Bearer '+cloudToken;
+  return fetch(u+path,opts);
+}
+async function registerCloud(){
+  try{
+    const r=await apiFetch('/api/auth/register',{method:'POST',body:JSON.stringify({username:$('cloudUser').value.trim(),password:$('cloudPass').value})});
+    const j=await r.json(); $('cloudMsg').textContent=j.ok?'注册成功，请登录':'注册失败：'+(j.error||'未知错误');
+  }catch(e){$('cloudMsg').textContent='连接失败：'+e.message}
+}
+async function loginCloud(){
+  try{
+    const r=await apiFetch('/api/auth/login',{method:'POST',body:JSON.stringify({username:$('cloudUser').value.trim(),password:$('cloudPass').value})});
+    const j=await r.json();
+    if(j.token){cloudToken=j.token;localStorage.setItem('odds_v15_token',cloudToken);$('cloudMsg').textContent='登录成功：'+$('cloudUser').value.trim();await pullCloud();}
+    else $('cloudMsg').textContent='登录失败：'+(j.error||'账号或密码错误');
+  }catch(e){$('cloudMsg').textContent='连接失败：'+e.message}
+}
+function logoutCloud(){cloudToken='';localStorage.removeItem('odds_v15_token');$('cloudMsg').textContent='已退出云端账号'}
+async function pushCloud(){
+  const u=$('apiUrl').value.trim().replace(/\/$/,''); db.settings.api=u; localStorage.setItem(KEY,JSON.stringify(db));
+  if(!u){$('cloudMsg').textContent='请先填写 API 地址';return}
+  if(!cloudToken){$('cloudMsg').textContent='请先登录云端账号';return}
+  try{
+    const r=await apiFetch('/api/sync/push',{method:'POST',body:JSON.stringify(db)});
+    const j=await r.json(); $('cloudMsg').textContent=j.ok?'上传成功：'+new Date().toLocaleString():'上传失败：'+(j.error||'未知错误');
+  }catch(e){$('cloudMsg').textContent='连接失败：'+e.message}
+}
+async function pullCloud(){
+  if(!cloudToken){$('cloudMsg').textContent='请先登录云端账号';return}
+  try{
+    const r=await apiFetch('/api/sync/pull'); const j=await r.json();
+    if(j.db){db=j.db;localStorage.setItem(KEY,JSON.stringify(db));renderAll();$('cloudMsg').textContent='拉取成功：'+new Date().toLocaleString()}
+    else $('cloudMsg').textContent='拉取失败：'+(j.error||'云端没有数据')
+  }catch(e){$('cloudMsg').textContent='连接失败：'+e.message}
+}
+function wipe(){if(confirm('确认清空本机全部数据？此操作不可撤销，请先导出备份。')){localStorage.removeItem(KEY);location.reload()}}
+if(!db.matches.length){
+  const m={id:"demo-match",league:"示例联赛",home:"主队示例",away:"客队示例",start:"示例数据 · 可删除",createdAt:now()};
+  db.matches=[m];db.selectedMatch=m.id;
+  const t=Date.now();
+  db.events=[
+    {id:"demo-e1",matchId:m.id,book:"示例公司A",market:"亚盘",line:"-0.25",a:.92,b:.96,tags:"开盘",ts:t-7200000,anomaly:0},
+    {id:"demo-e2",matchId:m.id,book:"示例公司A",market:"亚盘",line:"-0.5",a:.86,b:1.02,tags:"即时",ts:t-3600000,anomaly:65},
+    {id:"demo-e3",matchId:m.id,book:"示例公司B",market:"大小球",line:"2.5",a:.94,b:.90,tags:"即时",ts:t-1800000,anomaly:0},
+    {id:"demo-e4",matchId:m.id,book:"示例公司B",market:"欧赔",line:"1",a:1.92,b:3.55,tags:"临场",ts:t-600000,anomaly:0}
+  ];
+  localStorage.setItem(KEY,JSON.stringify(db));
+}
+renderAll();calcAH();calcOU();calcKelly();
+</script>
+</body>
+</html>
