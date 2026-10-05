@@ -43,7 +43,16 @@ app.post("/api/auth/login",(req,res)=>{const u=String(req.body?.username||"").tr
 app.get("/api/sync/pull",auth,(req,res)=>{const db=readDB();res.json({ok:true,db:db.users[req.user].data})});
 app.post("/api/sync/push",auth,(req,res)=>{const db=readDB();db.users[req.user].data={...req.body,version:17};writeDB(db);res.json({ok:true,time:new Date().toISOString()})});
 
-app.get("/api/global/status",async(req,res)=>{if(!SM_TOKEN)return res.json({ok:false,configured:false,error:"Railway 尚未配置 SPORTMONKS_API_TOKEN"});try{const j=await smJSON("/");res.json({ok:true,configured:true,message:"Sportmonks 数据源可访问"})}catch(e){res.status(502).json({ok:false,configured:true,error:e.message})}});
+app.get("/api/global/status",async(req,res)=>{
+  if(!SM_TOKEN)return res.json({ok:false,configured:false,error:"Railway 尚未配置 SPORTMONKS_API_TOKEN"});
+  const date=isoDate(req.query.date);
+  try{
+    const j=await smJSON(`/fixtures/date/${date}`,{include:"participants;league;season;state"});
+    res.json({ok:true,configured:true,date,fixtureCount:Array.isArray(j.data)?j.data.length:(j.data?1:0),message:"Sportmonks 赛事接口可访问"});
+  }catch(e){
+    res.status(502).json({ok:false,configured:true,date,error:e.message,endpoint:`/fixtures/date/${date}`});
+  }
+});
 app.get("/api/global/fixtures",async(req,res)=>{try{const date=isoDate(req.query.date);const j=await smJSON(`/fixtures/date/${date}`,{include:"participants;league;season;state;venue"});res.json({ok:true,date,fixtures:(j.data||[]).map(normFixture)})}catch(e){res.status(502).json({ok:false,error:e.message})}});
 app.get("/api/global/live",async(req,res)=>{try{const j=await smJSON("/livescores/inplay",{include:"participants;league;state;venue"});res.json({ok:true,fixtures:(j.data||[]).map(normFixture)})}catch(e){res.status(502).json({ok:false,error:e.message})}});
 app.get("/api/global/fixture/:id",async(req,res)=>{try{const j=await smJSON(`/fixtures/${encodeURIComponent(req.params.id)}`,{include:"participants;league;season;state;venue;odds;bookmakers"});res.json({ok:true,fixture:normFixture(j.data||j),odds:normOdds(j.data||j)})}catch(e){res.status(502).json({ok:false,error:e.message})}});
